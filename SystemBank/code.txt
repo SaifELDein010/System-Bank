@@ -1,0 +1,1562 @@
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <iomanip>
+#include "myFile.h"
+#include "readInput.h"
+#include "myString.h"
+
+using std::cout;
+using std::cin;
+using std::string;
+using std::vector;
+using std::fstream;
+
+enum enFeatureOfMainMenue { AddClient = 1, ShowClient = 2, FindClient = 3, DeleteClient = 4, UpdateClient = 5, Transaction = 6, ManageUsers = 7 ,Logout = 8 };
+enum enFeatureOfTransactionMenue { Depost = 1, enWithDraw = 2, enTotalBalance = 3, enMainMenue = 4 };
+enum enFeatureOfManageUserMenue { enListUsers = 1, enAddNewUser = 2, enDeleteUser = 3, enUpdateUser = 4, enFindUser = 5, enUserMainMenue = 6};
+
+void MainMenue() {
+
+	cout << readIn::Format(40, "=") << '\n';
+	cout << readIn::Format(15, " ") << "Main menue\n";
+	cout << readIn::Format(40, "=") << '\n';
+
+	cout << readIn::Format(10, " ") << "[1] Add Client\n";
+	cout << readIn::Format(10, " ") << "[2] Show Client\n";
+	cout << readIn::Format(10, " ") << "[3] Find Client\n";
+	cout << readIn::Format(10, " ") << "[4] Delete Client\n";
+	cout << readIn::Format(10, " ") << "[5] Update Client\n";
+	cout << readIn::Format(10, " ") << "[6] Transaction  \n";
+	cout << readIn::Format(10, " ") << "[7] Manage Users \n";
+	cout << readIn::Format(10, " ") << "[8] Logout  \n";
+
+	cout << readIn::Format(40, "=") << '\n';
+
+}
+void TransactionMainMenue() {
+
+	cout << readIn::Format(40, "=") << '\n';
+	cout << readIn::Format(8, " ") << "Transaction menue\n";
+	cout << readIn::Format(40, "=") << '\n';
+
+	cout << readIn::Format(10, " ") << "[1] Deposit\n";
+	cout << readIn::Format(10, " ") << "[2] With Draw\n";
+	cout << readIn::Format(10, " ") << "[3] Total balance\n";
+	cout << readIn::Format(10, " ") << "[4] Main Menue\n";
+
+	cout << readIn::Format(40, "=") << '\n';
+
+}
+void ManageUsersMainMenue() {
+
+	cout << readIn::Format(40, "=") << '\n';
+	cout << readIn::Format(8, " ") << "Manage Users  menue\n";
+	cout << readIn::Format(40, "=") << '\n';
+
+	cout << readIn::Format(10, " ") << "[1] List Users\n";
+	cout << readIn::Format(10, " ") << "[2] Add New User\n";
+	cout << readIn::Format(10, " ") << "[3] Delete User\n";
+	cout << readIn::Format(10, " ") << "[4] Update User\n";
+	cout << readIn::Format(10, " ") << "[5] Find User\n";
+	cout << readIn::Format(10, " ") << "[6] Main Menue\n";
+
+	cout << readIn::Format(40, "=") << '\n';
+
+}
+
+
+void Restert() {
+
+	system("color F");
+	system("cls");
+
+}
+void GoBack(string message) {
+
+	cout << message;
+	system("Pause>0");
+	Restert();
+
+}
+void HearderScreen(string message) {
+
+	cout << readIn::Format(26, "-") << '\n';
+
+	cout << readIn::Format(3, " ") << message << '\n';
+
+	cout << readIn::Format(26, "-") << "\n\n";
+
+}
+
+void InvalidAccess() {
+
+	Restert();
+	system("color 4");
+
+	cout << "Access Denied\nYou don`t have permission to do this.\nPlease conact your admine.\n";
+
+	GoBack("\nPress any key to go back to main menue...");
+
+}
+
+struct stClientInfo {
+
+	string accountNumber = "";
+	string pinCode = "";
+	string name = "";
+	string phone = "";
+	double accountBalance = 0.0;
+
+};
+
+struct stUserInfo {
+
+	string userName = "";
+	string password = "";
+
+	short permission = -1;
+
+};
+
+
+
+stClientInfo  CounvertToRecord(string clientLine, string seperator = "#//#") {
+
+	stClientInfo client;
+	vector <string> result;
+
+	str::SpiltString(clientLine, seperator, result);
+
+	client.accountNumber = result[0];
+	client.pinCode = result[1];
+	client.name = result[2];
+	client.phone = result[3];
+	client.accountBalance = std::stod(result[4]);
+
+	return client;
+
+}
+string		  ConvertToLine(stClientInfo& client, string sepratore = "#//#") {
+
+	string line = "";
+
+	line += client.accountNumber + sepratore;
+	line += client.pinCode + sepratore;
+	line += client.name + sepratore;
+	line += client.phone + sepratore;
+	line += std::to_string(client.accountBalance);
+
+	return line;
+
+}
+
+stUserInfo  CounvertUserInfoToRecord(string userLine, string seperator = "#//#") {
+
+	stUserInfo client;
+	vector <string> result;
+
+	str::SpiltString(userLine, seperator, result);
+
+	client.userName = result[0];
+	client.password = result[1];
+	client.permission = std::stoi(result[2]);
+
+	return client;
+
+}
+string		  ConvertUserToLine(stUserInfo& client, string sepratore = "#//#") {
+
+	string line = "";
+
+	line += client.userName + sepratore;
+	line += client.password + sepratore;
+	line += std::to_string(client.permission);
+	
+	return line;
+
+}
+
+
+void Header(short manyOfClient) {
+
+	cout << "\n\n" << readIn::Format(45, " ") << "Client List (" << manyOfClient << ") client (s).\n " << readIn::Format(118, "-") << '\n';
+
+	cout << " |" << std::left << std::setw(19) << "Account Number"
+		<< "|" << std::left << std::setw(17) << "PIN code"
+		<< "|" << std::left << std::setw(40) << "Client Name"
+		<< "|" << std::left << std::setw(20) << "Phone"
+		<< "|" << std::left << std::setw(19) << "Account Balance |\n";
+
+
+	cout << readIn::Format(118, "-") << '\n';
+
+
+
+}
+void FormattingInfo(stClientInfo client) {
+
+	cout << " |" << std::left << std::setw(19) << client.accountNumber;
+	cout << "|" << std::left << std::setw(17) << client.pinCode;
+	cout << "|" << std::left << std::setw(40) << client.name;
+	cout << "|" << std::left << std::setw(20) << client.phone;
+	cout << "|" << std::left << std::setw(16) << client.accountBalance;
+	cout << std::right << "|\n";
+
+}
+
+void HeaderTotalBalance(short manyOfClient) {
+
+	cout << "\n\n" << readIn::Format(36, " ") << "Client List (" << manyOfClient << ") client (s).\n  " << readIn::Format(100, "_") << "\n\n";
+
+	cout << "  |" << std::left << std::setw(25) << "Account Number"
+		<< "|" << std::left << std::setw(40) << "Client Name"
+		<< "|" << std::left << std::setw(10) << "Balance\n";
+
+	cout << readIn::Format(100, "_") << "\n\n";
+
+}
+void FormattingTotalBalanceInfo(stClientInfo client) {
+
+	cout << "  |" << std::left << std::setw(25) << client.accountNumber;
+	cout << "|" << std::left << std::setw(40) << client.name;
+	cout << "|" << std::left << std::setw(10) << client.accountBalance << '\n';
+
+
+}
+
+void UsersHeader(short manyOfUser) {
+
+	cout << "\n\n" << readIn::Format(45, " ") << "Client List (" << manyOfUser << ") client (s).\n " << readIn::Format(118, "-") << '\n';
+
+	cout << " |" << std::left << std::setw(20) << "User name"
+		<< "|" << std::left << std::setw(18) << "Password"
+		<< "|" << std::left << std::setw(14) << "Perimmison    |\n";
+
+	cout << readIn::Format(118, "-") << '\n';
+
+}
+void FormattingUserInfo(stUserInfo users) {
+
+	cout << " |" << std::left << std::setw(19) << users.userName;
+	cout << " |" << std::left << std::setw(17) << users.password;
+	cout << " |" << std::left << std::setw(14) << users.permission;
+	
+	cout << std::right << "|\n";
+
+}
+
+
+
+vector <stClientInfo> LoadData() {
+
+	fstream file;
+	stClientInfo client;
+	vector <stClientInfo> clients;
+
+	file.open("Client.txt", std::ios::in); //Read mode
+
+	if (file.is_open()) {
+
+		string line = "";
+
+		while (std::getline(file, line)) {
+
+			client = CounvertToRecord(line);
+
+			clients.push_back(client);
+
+		}
+
+		file.close();
+
+	}
+
+	return clients;
+
+
+}
+void SaveData(vector <string>& clients, string fileName) {
+
+	fstream file;
+
+	file.open(fileName, std::ios::out); //Write mode
+
+	if (file.is_open()) {
+
+		for (string& n : clients) {
+
+			if (n != "") {
+				file << n << '\n';
+			}
+
+		}
+
+		file.close();
+
+	}
+
+}
+
+vector <stUserInfo> LoadUserData() {
+
+	fstream file;
+	stUserInfo client;
+	vector <stUserInfo> clients;
+
+	file.open("user.txt", std::ios::in); //Read mode
+
+	if (file.is_open()) {
+
+		string line = "";
+
+		while (std::getline(file, line)) {
+
+			client = CounvertUserInfoToRecord(line);
+
+			clients.push_back(client);
+
+		}
+
+		file.close();
+
+	}
+
+	return clients;
+
+
+}
+
+
+bool ValidedAccountNumber(string accountNumber, vector <stClientInfo> clients) {
+
+	for (stClientInfo& n : clients) {
+
+		if (n.accountNumber == accountNumber)
+			return false;
+
+	}
+
+	return true;
+
+}
+stClientInfo ReadClientInformation(vector <stClientInfo> clients) {
+
+	stClientInfo client;
+
+	cout << "Add new Client: \n\n";
+
+	client.accountNumber = readIn::ReadText("\nEnter Account number: ");
+
+	while (!(ValidedAccountNumber(client.accountNumber, clients))) {
+
+		system("Color 4");
+		cout << "The account number [" << client.accountNumber << "] is exist.";
+		client.accountNumber = readIn::ReadText("\n\nEnter Account number: ");
+		system("color F");
+	}
+
+	client.pinCode = readIn::ReadText("Enter PIN code: ");
+	client.name = readIn::ReadText("Enter Name: ");
+	client.phone = readIn::ReadText("Enter Phone: ");
+	client.accountBalance = readIn::ReadFromNumberDouble("Enter Account balance: ", 0);
+
+	return client;
+
+}
+
+stClientInfo ReadClientInformation(string accountNumber) {
+
+	stClientInfo client;
+
+	client.accountNumber = accountNumber;
+	client.pinCode = readIn::ReadText(" PIN code : ");
+	client.name = readIn::ReadText(" Name : ");
+	client.phone = readIn::ReadText(" Phone : ");
+	client.accountBalance = readIn::ReadFromNumberDouble(" Account balance : ", 0);
+
+	return client;
+
+}
+
+
+short ReadPerimmison(char fullAccess) {
+
+	if (std::tolower(fullAccess) == 'y')
+		return -1;
+
+	short perimmison = 0;
+	char access = 'y';
+
+	cout << "Do you want to give access to: \n";
+	access = readIn::ReadCharacter("Access \"Add client\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 1 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Show client\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 2 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Find client\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 4 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Delete client\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 8 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Update client\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 16 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Transation\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 32 : perimmison = perimmison;
+
+	access = readIn::ReadCharacter("Access \"Manage users\"? y/n? ");
+	std::tolower(access) == 'y' ? perimmison = perimmison | 64 : perimmison = perimmison;
+
+	return perimmison;
+
+}
+
+bool ValidedUserName(string userName, vector <stUserInfo> users) {
+
+	for (stUserInfo& n : users) {
+
+		if (n.userName == userName)
+			return false;
+
+	}
+
+	return true;
+
+}
+stUserInfo ReadUserInformation(vector <stUserInfo> users) {
+
+	stUserInfo user;
+
+	cout << "Add new user: \n\n";
+
+	user.userName = readIn::ReadText("\nEnter user name: ");
+
+	while (!(ValidedUserName(user.userName, users))) {
+
+		system("Color 4");
+		cout << "The user name [" << user.userName << "] is exist.";
+		user.userName = readIn::ReadText("\n\nEnter Enter user name: ");
+		system("color F");
+	}
+
+	user.password = readIn::ReadText("Enter Password: ");
+	
+	char fullAccess = readIn::ReadCharacter("Do you want to give full access? y/n? ");
+
+	user.permission = ReadPerimmison(fullAccess);
+
+	return user;
+
+}
+
+
+bool ValidedUserINfo(string userName, string password, vector <stUserInfo> users) {
+
+	for (stUserInfo& n : users) {
+
+		if (n.userName == userName && n.password == password)
+			return true;
+
+	}
+
+	return false;
+
+}
+stUserInfo ReadLogin(vector <stUserInfo> users) {
+
+	stUserInfo user;
+
+	HearderScreen("Login screen");
+
+	user.userName = readIn::ReadText("Enter User name: ");
+	user.password = readIn::ReadText("Enter Password: ");
+
+	while (!(ValidedUserINfo(user.userName, user.password, users))) {
+
+		system("Color 4");
+		cout << "\nInvlaid userName\\Password\n";
+		user.userName = readIn::ReadText("Enter User name: ");
+		user.password = readIn::ReadText("Enter Password: ");
+		system("color F");
+	}
+
+	return user;
+
+}
+
+stUserInfo ReadUserInformation(string userName) {
+
+	stUserInfo user;
+
+	user.userName = userName;
+	user.password = readIn::ReadText(" Password : ");
+	
+	char fullAccess = readIn::ReadCharacter("Do you want to give full access? y/n? ");
+
+	user.permission = ReadPerimmison(fullAccess);
+
+	return user;
+
+}
+
+
+void Add(stClientInfo record) {
+
+	fstream file;
+
+	file.open("Client.txt", std::ios::out | std::ios::app); //Write mode | Append mode
+
+	if (file.is_open()) {
+
+		if (ConvertToLine(record) != "") {
+			file << ConvertToLine(record) << '\n';
+		}
+
+		file.close();
+
+	}
+
+
+}
+void Add(stUserInfo record) {
+
+	fstream file;
+
+	file.open("user.txt", std::ios::out | std::ios::app); //Write mode | Append mode
+
+	if (file.is_open()) {
+
+		if (ConvertUserToLine(record) != "") {
+			file << ConvertUserToLine(record) << '\n';
+		}
+
+		file.close();
+
+	}
+
+
+}
+
+
+void PrintCard(stClientInfo client) {
+
+	cout << "\n >> Information about account number \"" << client.accountNumber << "\":\n";
+
+	cout << " Account number   : " << client.accountNumber << '\n';
+	cout << " PIN code         : " << client.pinCode << '\n';
+	cout << " Name             : " << client.name << '\n';
+	cout << " Phone            : " << client.phone << '\n';
+	cout << " Account balance  : " << client.accountBalance << '\n';
+
+
+}
+
+bool Find(vector <stClientInfo> clients, stClientInfo& client, string accountNumber) {
+
+	for (stClientInfo& n : clients) {
+
+		if (n.accountNumber == accountNumber) {
+
+			client = n;
+			return true;
+
+		}
+
+	}
+
+	return false;
+
+}
+
+void ShowDetailFromAccountNumber(vector <stClientInfo> clients) {
+
+	stClientInfo client;
+	string accountNumber = readIn::ReadText("Enter Account number: ");
+
+	if (Find(clients, client, accountNumber)) {
+
+		system("Color 2");
+		PrintCard(client);
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nClient with Account number \"" << accountNumber << "\" Not found!\n";
+
+	}
+
+
+}
+
+
+void PrintUserCard(stUserInfo users) {
+
+	cout << "\n >> Information about User name \"" << users.userName << "\":\n";
+
+	cout << " User name    : " << users.userName << '\n';
+	cout << " Password     : " << users.password << '\n';
+	cout << " Permissionsa : " << users.permission << '\n';
+
+}
+
+bool Find(vector <stUserInfo> users, stUserInfo& user, string userName) {
+
+	for (stUserInfo& n : users) {
+
+		if (n.userName == userName) {
+
+			user = n;
+			return true;
+
+		}
+
+	}
+
+	return false;
+
+}
+
+void ShowUserDetailFromAccountNumber(vector <stUserInfo> users) {
+
+	stUserInfo user;
+	string userName = readIn::ReadText("Enter User name: ");
+
+	if (Find(users, user, userName)) {
+
+		system("Color 2");
+		PrintUserCard(user);
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nUser with User Name \"" << userName << "\" Not found!\n";
+
+	}
+
+
+}
+
+
+
+void DeleteData(vector <stClientInfo>& client, string record) {
+
+	vector <string> vclient;
+
+	for (stClientInfo& n : client) {
+
+		if (ConvertToLine(n) == record) {
+			ConvertToLine(n) = "";
+		}
+		else {
+			vclient.push_back(ConvertToLine(n));
+		}
+
+	}
+
+	SaveData(vclient, "Client.txt");
+
+}
+bool Delete(vector <stClientInfo>& clients) {
+
+	stClientInfo client;
+	string accountNumber = readIn::ReadText("Enter Account number: ");
+	char _Delete = 'y';
+
+	if (Find(clients, client, accountNumber)) {
+
+		system("Color 2");
+		PrintCard(client);
+
+		_Delete = readIn::ReadCharacter("\n >> Are you sure you want to delete user? y/n > ");
+
+		if (tolower(_Delete) == 'y') {
+
+			DeleteData(clients, ConvertToLine(client));
+			return true;
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nClient with Account number \"" << accountNumber << "\" Not found!\n";
+		return false;
+
+	}
+
+
+
+}
+
+void DeleteUserData(vector <stUserInfo>& user, string record) {
+
+	vector <string> vUser;
+
+	for (stUserInfo& n : user) {
+
+		if (ConvertUserToLine(n) == record) {
+			ConvertUserToLine(n) = "";
+		}
+		else {
+			vUser.push_back(ConvertUserToLine(n));
+		}
+
+	}
+
+	SaveData(vUser, "user.txt");
+
+}
+bool DeleteUser(vector <stUserInfo>& Users) {
+
+	stUserInfo user;
+	string userName = readIn::ReadText("Enter User name: ");
+
+	if (userName == "admin") {
+
+		cout << "Can`t Delete admin\n";
+		return false;
+
+	}
+
+	char _Delete = 'y';
+
+	if (Find(Users, user, userName)) {  // admin
+
+		system("Color 2");
+		PrintUserCard(user);
+
+		_Delete = readIn::ReadCharacter("\n >> Are you sure you want to delete user? y/n > ");
+
+		if (tolower(_Delete) == 'y') {
+
+			DeleteUserData(Users, ConvertUserToLine(user));
+			return true;
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nUser with User name \"" << userName << "\" Not found!\n";
+		return false;
+
+	}
+
+
+
+}
+
+
+
+
+void SaveDataUpdatded(vector <stClientInfo>& clients) {
+
+	fstream file;
+
+	file.open("Client.txt", std::ios::out); //Write mode
+
+	if (file.is_open()) {
+
+		for (stClientInfo& n : clients) {
+
+			file << ConvertToLine(n) << '\n';
+
+		}
+
+		file.close();
+
+	}
+
+}
+void SaveUserDataUpdatded(vector <stUserInfo>& users) {
+
+	fstream file;
+
+	file.open("user.txt", std::ios::out); //Write mode
+
+	if (file.is_open()) {
+
+		for (stUserInfo& n : users) {
+
+			file << ConvertUserToLine(n) << '\n';
+
+		}
+
+		file.close();
+
+	}
+
+}
+
+
+bool Update(vector <stClientInfo>& clients) {
+
+	stClientInfo client;
+	stClientInfo UpdateClient;
+	string accountNumber = readIn::ReadText("Enter Account number: ");
+	char _Update = 'y';
+
+	if (Find(clients, client, accountNumber)) {
+
+		system("Color 2");
+		PrintCard(client);
+
+		cout << "\n >> Are you sure you want to update client? y/n > ";
+		cin >> _Update;
+
+		if (tolower(_Update) == 'y') {
+
+			for (stClientInfo& C : clients) {
+
+				if (C.accountNumber == accountNumber) {
+
+					C = ReadClientInformation(accountNumber);
+
+					break;
+				}
+
+			}
+
+			SaveDataUpdatded(clients);
+			return true;
+
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nClient with Account number \"" << accountNumber << "\" Not found!\n";
+		return false;
+
+	}
+
+
+
+}
+
+bool UpdateUser(vector <stUserInfo>& users) {
+
+	stUserInfo user;
+	stUserInfo Updateuser;
+	string userName = readIn::ReadText("Enter user name: ");
+
+	if (userName == "admin") {
+
+		cout << "Can`t update admin\n";
+		return false;
+
+	}
+
+	char _Update = 'y';
+
+	if (Find(users, user, userName)) {
+
+		system("Color 2");
+		PrintUserCard(user);
+
+		_Update = readIn::ReadCharacter("\n >> Are you sure you want to update user? y/n > ");
+
+		if (tolower(_Update) == 'y') {
+
+			for (stUserInfo& C : users) {
+
+				if (C.userName == userName) {
+
+					C = ReadUserInformation(userName);
+
+					break;
+				}
+
+			}
+
+			SaveUserDataUpdatded(users);
+			return true;
+
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nUser with user name \"" << userName << "\" Not found!\n";
+		return false;
+
+	}
+
+
+
+}
+
+
+/*bool ValidedIfAccountNumberExist(string accountNumber) {
+
+	vector <stClientInfo> clients = LoadData();
+
+	for (stClientInfo& n : clients) {
+
+		if (n.accountNumber == accountNumber)
+			return true;
+
+	}
+
+	return false;
+
+}*/
+
+int GetNewBalance(int currentAmout, int depositAmount) {
+
+	return currentAmout + depositAmount;
+
+}
+bool Deposit(vector <stClientInfo>& clients) {
+
+	stClientInfo client;
+	string accountNumber = readIn::ReadText("Enter Account number: ");
+	int amount = 0;
+	char areyouSure = 'y';
+
+	if (Find(clients, client, accountNumber)) {
+
+		system("Color 2");
+		PrintCard(client);
+
+		amount = readIn::ReadFromNumber("\n >> Enter deposit amount? ", 0);
+		areyouSure = readIn::ReadCharacter("\n >> Are you sure you want to Perform this Transaction? y/n? ");
+
+		if (tolower(areyouSure) == 'y') {
+
+			for (stClientInfo& C : clients) {
+
+				if (C.accountNumber == accountNumber) {
+
+					C.accountBalance = GetNewBalance(C.accountBalance, amount);
+					cout << " >> Done, The new balance is " << C.accountBalance << '\n';
+					break;
+				}
+
+			}
+
+			SaveDataUpdatded(clients);
+			return true;
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nClient with Account number \"" << accountNumber << "\" Not found!\n";
+		return false;
+
+	}
+
+
+}
+
+bool ValidedIfAmountGreateThanBalance(int currentAmout, int amount) {
+
+	return (currentAmout < amount);
+
+}
+bool WithDraw(vector <stClientInfo>& clients) {
+
+	stClientInfo client;
+	string accountNumber = readIn::ReadText("Enter Account number: ");
+	int amount = 0;
+	char areyouSure = 'y';
+
+	if (Find(clients, client, accountNumber)) {
+
+		system("Color 2");
+		PrintCard(client);
+
+		amount = readIn::ReadFromNumber("\n >> Enter With draw amount? ", 0);
+
+		while (ValidedIfAmountGreateThanBalance(client.accountBalance, amount)) {
+
+			system("color 4");
+			cout << "\n Amount eceeds the balance you can with draw up to " << client.accountBalance;
+			amount = readIn::ReadFromNumber("\n >> Enter With draw amount? ", 0);
+			system("color F");
+
+		}
+
+		areyouSure = readIn::ReadCharacter("\n >> Are you sure you want to Perform this Transaction? y/n? ");
+
+		if (tolower(areyouSure) == 'y') {
+
+			for (stClientInfo& C : clients) {
+
+				if (C.accountNumber == accountNumber) {
+
+					C.accountBalance = GetNewBalance(C.accountBalance, amount * -1);
+					cout << " >> Done, The new balance is " << C.accountBalance << '\n';
+					break;
+				}
+
+			}
+
+			SaveDataUpdatded(clients);
+			return true;
+
+		}
+
+		return false;
+
+	}
+	else {
+
+		system("Color 4");
+		cout << "\nClient with Account number \"" << accountNumber << "\" Not found!\n";
+		return false;
+
+	}
+
+
+}
+
+
+int TotalBalance(vector <stClientInfo>& clients) {
+
+	int totalBalance = 0;
+
+	for (stClientInfo& n : clients) {
+
+		if (n.accountBalance)
+			totalBalance += n.accountBalance;
+
+	}
+
+	return totalBalance;
+
+}
+
+
+void AddFeature(vector <stClientInfo>& clients) {
+
+	char again = 'y';
+	stClientInfo client;
+
+	while (tolower(again) == 'y') {
+
+		Restert();
+		HearderScreen("Add client screen");
+
+		client = ReadClientInformation(clients);
+
+		Add(client);
+
+		clients = LoadData();
+		SaveDataUpdatded(clients);
+
+		cout << "\n >> Do you want to add more client? y/n > ";
+		cin >> again;
+
+	}
+
+}
+void ShowFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	Header(clients.size());
+
+	for (stClientInfo& n : clients) {
+
+		FormattingInfo(n);
+
+	}
+
+	cout << ' ' << readIn::Format(118, "-") << '\n';
+
+
+}
+void FindFeature(vector <stClientInfo>& clients) {
+
+	char again = 'y';
+
+	while (tolower(again) == 'y') {
+
+		Restert();
+		HearderScreen("Find client screen");
+
+		ShowDetailFromAccountNumber(clients);
+
+		clients = LoadData();
+		SaveDataUpdatded(clients);
+
+		cout << "\n >> Do you want to find anthor client? y/n ? ";
+		cin >> again;
+
+	}
+
+}
+void DeleteFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	HearderScreen("Delete client screen");
+
+	if (Delete(clients)) {
+
+		clients = LoadData();
+		SaveDataUpdatded(clients);
+
+		system("Color 2");
+		cout << "\nDelete client succueded\n";
+
+	}
+
+}
+void UpdateFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	HearderScreen("Update client screen");
+
+	if (Update(clients)) {
+
+		clients = LoadData();
+		SaveDataUpdatded(clients);
+
+		system("Color 2");
+		cout << "\nUpdate client succueded\n";
+
+	}
+
+}
+
+
+void DepositFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	HearderScreen("Deposit client screen");
+
+	Deposit(clients);
+
+}
+void WithDrawFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	HearderScreen("With_Draw client screen");
+
+	WithDraw(clients);
+
+}
+void TotalBalanceFeature(vector <stClientInfo>& clients) {
+
+	Restert();
+	HeaderTotalBalance(clients.size());
+
+	for (stClientInfo& n : clients) {
+
+		FormattingTotalBalanceInfo(n);
+
+	}
+
+	cout << "  " << readIn::Format(100, "_") << "\n\n";
+
+	cout << readIn::Format(55, " ") << "Total Balance: " << TotalBalance(clients) << '\n';
+
+}
+
+
+void AddUserFeature(vector <stUserInfo>& users) {
+
+	char again = 'y';
+	stUserInfo user;
+
+	while (tolower(again) == 'y') {
+
+		Restert();
+		HearderScreen("Add user screen");
+
+		user = ReadUserInformation(users);
+
+		Add(user);
+
+		users = LoadUserData();
+		SaveUserDataUpdatded(users);
+
+		cout << "\n >> Do you want to add more user? y/n > ";
+		cin >> again;
+
+	}
+
+}
+void ListUserFeature(vector <stUserInfo>& users) {
+
+	Restert();
+	UsersHeader(users.size());
+
+	for (stUserInfo& n : users) {
+
+		FormattingUserInfo(n);
+
+	}
+
+	cout << ' ' << readIn::Format(118, "-") << '\n';
+
+
+}
+void FindUserFeature(vector <stUserInfo>& users) {
+
+	char again = 'y';
+
+	while (tolower(again) == 'y') {
+
+		Restert();
+		HearderScreen("Find user screen");
+
+		ShowUserDetailFromAccountNumber(users);
+
+		users = LoadUserData();
+		SaveUserDataUpdatded(users);
+
+		cout << "\n >> Do you want to find anthor User? y/n ? ";
+		cin >> again;
+
+	}
+
+}
+void DeleteUserFeature(vector <stUserInfo>& users) {
+
+	Restert();
+	HearderScreen("Delete user screen");
+
+	if (DeleteUser(users)) {
+
+		users = LoadUserData();
+		SaveUserDataUpdatded(users);
+
+		system("Color 2");
+		cout << "\nDelete user succueded\n";
+
+	}
+
+}
+void UpdateUserFeature(vector <stUserInfo>& users) {
+
+	Restert();
+	HearderScreen("Update user screen");
+
+	if (UpdateUser(users)) {
+
+		users = LoadUserData();
+		SaveUserDataUpdatded(users);
+
+		system("Color 2");
+		cout << "\nUpdate user succueded\n";
+
+	}
+
+}
+
+vector <stClientInfo> clients = LoadData();
+vector <stUserInfo> users = LoadUserData();
+short perimmison = 0;
+
+short GetPermissionFromUserName(string userName) {
+
+	for (stUserInfo& i : ::users) {
+
+		if (i.userName == userName)
+			return i.permission;
+
+	}
+
+}
+bool IsAccess(short number, short comberIt) {
+
+	return (::perimmison & number) == comberIt;
+
+}
+
+
+void GetFeaturesOfMainMenue();
+void Login() {
+
+	stUserInfo user = ReadLogin(::users);
+	::perimmison = GetPermissionFromUserName(user.userName);
+	GetFeaturesOfMainMenue();
+
+}
+
+void GetFeaturesOfManageUsersMenue();
+void GetFeaturesOfTransactionMenue();
+void GetFeaturesOfMainMenue() {
+
+	short num = 7;
+
+	Restert();
+	MainMenue();
+
+	cout << ::perimmison;
+
+
+	do {
+
+		num = readIn::ReadFromToRangeOfNumbersShort("Choose what do you want to do?[1To8] ", 1, 8);
+
+		switch ((enFeatureOfMainMenue)num) {
+
+		case enFeatureOfMainMenue::AddClient:
+
+			if (::perimmison == -1 || IsAccess(1,1)) {
+
+				AddFeature(::clients);
+				GoBack("\nPress any key to go back to main menue...");
+				MainMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::ShowClient:
+
+			if (::perimmison == -1 || IsAccess(2, 2)) {
+
+				ShowFeature(::clients);
+				GoBack("\nPress any key to go back to main menue...");
+				MainMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::FindClient:
+
+			if (::perimmison == -1 || IsAccess(4, 4)) {
+
+				FindFeature(::clients);
+				GoBack("\nPress any key to go back to main menue...");
+				MainMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::DeleteClient:
+
+			if (::perimmison == -1 || IsAccess(8, 8)) {
+
+				DeleteFeature(::clients);
+				GoBack("\nPress any key to go back to main menue...");
+				MainMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::UpdateClient:
+
+			if (::perimmison == -1 || IsAccess(16, 16)) {
+
+				UpdateFeature(::clients);
+				GoBack("\nPress any key to go back to main menue...");
+				MainMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::Transaction:
+			
+			if (::perimmison == -1 || IsAccess(32, 32)) {
+
+				GetFeaturesOfTransactionMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::ManageUsers:
+
+			if (::perimmison == -1 || IsAccess(64, 64)) {
+
+				GetFeaturesOfManageUsersMenue();
+
+			}
+			else {
+
+				InvalidAccess();
+				MainMenue();
+
+			}
+
+			break;
+
+		case enFeatureOfMainMenue::Logout:
+			Restert();
+			Login();
+			return;
+
+		}
+
+	} while (num < 8);
+
+}
+
+void GetFeaturesOfTransactionMenue() {
+
+	short num = 4;
+
+	Restert();
+	TransactionMainMenue();
+
+	do {
+
+		num = readIn::ReadFromToRangeOfNumbersShort("Choose what do you want to do?[1To4] ", 1, 4);
+
+		switch ((enFeatureOfTransactionMenue)num) {
+
+		case enFeatureOfTransactionMenue::Depost:
+			DepositFeature(::clients);
+			GoBack("\nPress any key to go back to Transaction main menue...");
+			TransactionMainMenue();
+			break;
+
+		case enFeatureOfTransactionMenue::enWithDraw:
+			WithDrawFeature(::clients);
+			GoBack("\nPress any key to go back to Transaction main menue...");
+			TransactionMainMenue();
+			break;
+
+		case enFeatureOfTransactionMenue::enTotalBalance:
+			TotalBalanceFeature(::clients);
+			GoBack("\nPress any key to go back to Transaction main menue...");
+			TransactionMainMenue();
+			break;
+
+		case enFeatureOfTransactionMenue::enMainMenue:
+			GetFeaturesOfMainMenue();
+			break;
+
+
+		}
+
+	} while (num != 4);
+
+}
+
+void GetFeaturesOfManageUsersMenue() {
+
+	short num = 7;
+
+	Restert();
+	ManageUsersMainMenue();
+
+	do {
+
+		num = readIn::ReadFromToRangeOfNumbersShort("Choose what do you want to do?[1To6] ", 1, 6);
+
+		switch ((enFeatureOfManageUserMenue)num) {
+
+		case enFeatureOfManageUserMenue::enAddNewUser:
+			AddUserFeature(::users);
+			GoBack("\nPress any key to go back to Manage Users menue...");
+			ManageUsersMainMenue();
+			break;
+
+		case enFeatureOfManageUserMenue::enListUsers:
+			ListUserFeature(::users);
+			GoBack("\nPress any key to go back to Manage Users menue...");
+			ManageUsersMainMenue();
+			break;
+
+		case enFeatureOfManageUserMenue::enDeleteUser:
+			DeleteUserFeature(::users);
+			GoBack("\nPress any key to go back to Manage Users menue...");
+			ManageUsersMainMenue();
+			break;
+
+		case enFeatureOfManageUserMenue::enUpdateUser:
+			UpdateUserFeature(::users);
+			GoBack("\nPress any key to go back to Manage Users menue...");
+			ManageUsersMainMenue();
+			break;
+
+		case enFeatureOfManageUserMenue::enFindUser:
+			FindUserFeature(::users);
+			GoBack("\nPress any key to go back to Manage Users menue...");
+			ManageUsersMainMenue();
+			break;
+
+		case enFeatureOfManageUserMenue::enUserMainMenue:
+			GetFeaturesOfMainMenue();
+			break;
+
+		}
+
+	} while (num < 7);
+
+}
+
+
+void BankSystem() {
+
+	Login();
+
+}
+
+int main() {
+	
+	BankSystem();
+
+	system("pause>0");
+
+}
